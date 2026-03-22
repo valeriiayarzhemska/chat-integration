@@ -1,17 +1,20 @@
 'use client';
 
 import { useState } from 'react';
-import type { UpdateTodoDto } from '@/types/todo';
+
+import { TodoForm } from '@/components/todos/TodoForm';
+import { TodoFilters } from '@/components/todos/TodoFilters';
+import { TodoList } from '@/components/todos/TodoList';
+import { Pagination } from '@/components/todos/Pagination';
+
 import { useTodos } from './hooks/useTodos';
 import {
   useCreateTodo,
   useUpdateTodo,
   useDeleteTodo,
 } from './hooks/useTodoMutations';
-import { TodoForm } from '@/components/todos/TodoForm';
-import { TodoFilters } from '@/components/todos/TodoFilters';
-import { TodoList } from '@/components/todos/TodoList';
-import { Pagination } from '@/components/todos/Pagination';
+
+import type { UpdateTodoDto } from '@/types/todo';
 
 export default function TodosSWRPage() {
   const [page, setPage] = useState(1);
