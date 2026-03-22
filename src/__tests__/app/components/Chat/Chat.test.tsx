@@ -1,14 +1,14 @@
 import React from 'react';
 import { render, screen, waitFor, userEvent } from '@/utils/test-utils';
+import { rest } from 'msw';
+import { server } from '@/mocks/server';
+import {
+  createErrorHandler,
+  createNetworkErrorHandler,
+} from '@/mocks/handlers';
 import Chat from '@/components/Chat';
 
-global.fetch = jest.fn();
-
 describe('Chat Component', () => {
-  beforeEach(() => {
-    (global.fetch as jest.Mock).mockReset();
-  });
-
   describe('Snapshot Tests', () => {
     it('should match snapshot on initial render', () => {
       const { container } = render(<Chat url="/api/chat" />);
@@ -64,14 +64,6 @@ describe('Chat Component', () => {
     it('should clear input after successful message send', async () => {
       const user = userEvent.setup();
 
-      // Mock successful API response
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({
-          message: { role: 'assistant', content: 'Hi there!' },
-        }),
-      });
-
       render(<Chat url="/api/chat" />);
 
       const input = screen.getByPlaceholderText('Write message...');
@@ -86,15 +78,8 @@ describe('Chat Component', () => {
   });
 
   describe('Click Interactions', () => {
-    it('should call fetch when send button is clicked', async () => {
+    it('should send message when send button is clicked', async () => {
       const user = userEvent.setup();
-
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({
-          message: { role: 'assistant', content: 'Response' },
-        }),
-      });
 
       render(<Chat url="/api/chat" />);
 
@@ -102,13 +87,13 @@ describe('Chat Component', () => {
       await user.type(input, 'Test message');
       await user.click(screen.getByRole('button', { name: /send/i }));
 
-      expect(global.fetch).toHaveBeenCalledWith(
-        '/api/chat',
-        expect.objectContaining({
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-        }),
-      );
+      // Verify the message was sent and response received
+      await waitFor(() => {
+        expect(screen.getByText('Test message')).toBeInTheDocument();
+        expect(
+          screen.getByText('This is a mocked response from the AI assistant.'),
+        ).toBeInTheDocument();
+      });
     });
 
     it('should not send empty message', async () => {
@@ -118,7 +103,8 @@ describe('Chat Component', () => {
 
       await user.click(screen.getByRole('button', { name: /send/i }));
 
-      expect(global.fetch).not.toHaveBeenCalled();
+      // No messages should be displayed
+      expect(screen.queryByText(/user:/)).not.toBeInTheDocument();
     });
 
     it('should not send whitespace-only message', async () => {
@@ -130,21 +116,14 @@ describe('Chat Component', () => {
       await user.type(input, '   ');
       await user.click(screen.getByRole('button', { name: /send/i }));
 
-      expect(global.fetch).not.toHaveBeenCalled();
+      // No messages should be displayed
+      expect(screen.queryByText(/user:/)).not.toBeInTheDocument();
     });
   });
 
   describe('API Response Handling', () => {
     it('should display user message after sending', async () => {
       const user = userEvent.setup();
-
-      // Mock successful API response
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({
-          message: { role: 'assistant', content: 'Response' },
-        }),
-      });
 
       render(<Chat url="/api/chat" />);
 
@@ -160,13 +139,6 @@ describe('Chat Component', () => {
     it('should display assistant response', async () => {
       const user = userEvent.setup();
 
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({
-          message: { role: 'assistant', content: 'AI Response' },
-        }),
-      });
-
       render(<Chat url="/api/chat" />);
 
       const input = screen.getByPlaceholderText('Write message...');
@@ -174,7 +146,9 @@ describe('Chat Component', () => {
       await user.click(screen.getByRole('button', { name: /send/i }));
 
       await waitFor(() => {
-        expect(screen.getByText('AI Response')).toBeInTheDocument();
+        expect(
+          screen.getByText('This is a mocked response from the AI assistant.'),
+        ).toBeInTheDocument();
       });
     });
 
@@ -182,10 +156,8 @@ describe('Chat Component', () => {
       const user = userEvent.setup();
       const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
 
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
-        ok: false,
-        status: 500,
-      });
+      // Override MSW handler for this test
+      server.use(createErrorHandler('/api/chat', 500, 'Internal server error'));
 
       render(<Chat url="/api/chat" />);
 
@@ -207,10 +179,8 @@ describe('Chat Component', () => {
       const user = userEvent.setup();
       const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
 
-      // Mock network error
-      (global.fetch as jest.Mock).mockRejectedValueOnce(
-        new Error('Network error'),
-      );
+      // Override MSW handler for network error
+      server.use(createNetworkErrorHandler('/api/chat'));
 
       render(<Chat url="/api/chat" />);
 
@@ -229,12 +199,17 @@ describe('Chat Component', () => {
     it('should disable input and button while loading', async () => {
       const user = userEvent.setup();
 
-      let resolveResponse: any;
-      const responsePromise = new Promise((resolve) => {
-        resolveResponse = resolve;
-      });
-
-      (global.fetch as jest.Mock).mockReturnValueOnce(responsePromise);
+      // Simulate a delayed response
+      server.use(
+        rest.post('/api/chat', async (req, res, ctx) => {
+          await new Promise((resolve) => setTimeout(resolve, 100));
+          return res(
+            ctx.json({
+              message: { role: 'assistant', content: 'Response' },
+            }),
+          );
+        }),
+      );
 
       render(<Chat url="/api/chat" />);
 
@@ -248,14 +223,6 @@ describe('Chat Component', () => {
       expect(input).toBeDisabled();
       expect(button).toBeDisabled();
 
-      // Resolve the promise
-      resolveResponse({
-        ok: true,
-        json: async () => ({
-          message: { role: 'assistant', content: 'Response' },
-        }),
-      });
-
       // Should be enabled after response
       await waitFor(() => {
         expect(input).not.toBeDisabled();
@@ -264,16 +231,22 @@ describe('Chat Component', () => {
     });
   });
 
-  describe('Mock Function Patterns', () => {
-    it('verifies fetch was called with correct payload', async () => {
+  describe('MSW Request Verification', () => {
+    it('sends correct payload to API', async () => {
       const user = userEvent.setup();
 
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({
-          message: { role: 'assistant', content: 'Response' },
+      // Create a custom handler to verify the request
+      let capturedRequest: any = null;
+      server.use(
+        rest.post('/api/chat', async (req, res, ctx) => {
+          capturedRequest = await req.json();
+          return res(
+            ctx.json({
+              message: { role: 'assistant', content: 'Response' },
+            }),
+          );
         }),
-      });
+      );
 
       render(<Chat url="/api/chat" />);
 
@@ -281,40 +254,31 @@ describe('Chat Component', () => {
       await user.click(screen.getByRole('button', { name: /send/i }));
 
       await waitFor(() => {
-        expect(global.fetch).toHaveBeenCalledTimes(1);
+        expect(capturedRequest).toBeTruthy();
       });
 
-      const fetchCall = (global.fetch as jest.Mock).mock.calls[0];
-      const [url, options] = fetchCall;
-
-      expect(url).toBe('/api/chat');
-      expect(options.method).toBe('POST');
-
-      const body = JSON.parse(options.body);
-      expect(body.messages).toHaveLength(1);
-      expect(body.messages[0]).toEqual({
+      expect(capturedRequest.messages).toHaveLength(1);
+      expect(capturedRequest.messages[0]).toEqual({
         role: 'user',
         content: 'Hello',
       });
     });
 
-    it('demonstrates multiple API calls', async () => {
+    it('demonstrates multiple API calls with MSW', async () => {
       const user = userEvent.setup();
 
-      // Mock multiple responses
-      (global.fetch as jest.Mock)
-        .mockResolvedValueOnce({
-          ok: true,
-          json: async () => ({
-            message: { role: 'assistant', content: 'First response' },
-          }),
-        })
-        .mockResolvedValueOnce({
-          ok: true,
-          json: async () => ({
-            message: { role: 'assistant', content: 'Second response' },
-          }),
-        });
+      // MSW will handle multiple requests with the same handler
+      let callCount = 0;
+      server.use(
+        rest.post('/api/chat', async (req, res, ctx) => {
+          callCount++;
+          return res(
+            ctx.json({
+              message: { role: 'assistant', content: `Response ${callCount}` },
+            }),
+          );
+        }),
+      );
 
       render(<Chat url="/api/chat" />);
 
@@ -325,7 +289,7 @@ describe('Chat Component', () => {
       await user.click(screen.getByRole('button', { name: /send/i }));
 
       await waitFor(() => {
-        expect(screen.getByText('First response')).toBeInTheDocument();
+        expect(screen.getByText('Response 1')).toBeInTheDocument();
       });
 
       // Second message
@@ -334,10 +298,10 @@ describe('Chat Component', () => {
       await user.click(screen.getByRole('button', { name: /send/i }));
 
       await waitFor(() => {
-        expect(screen.getByText('Second response')).toBeInTheDocument();
+        expect(screen.getByText('Response 2')).toBeInTheDocument();
       });
 
-      expect(global.fetch).toHaveBeenCalledTimes(2);
+      expect(callCount).toBe(2);
     });
   });
 });

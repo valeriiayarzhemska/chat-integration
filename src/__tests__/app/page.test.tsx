@@ -26,7 +26,9 @@ describe('Home Page', () => {
       const openaiLink = screen.getByRole('link', { name: /openai chat/i });
       const gpt4allLink = screen.getByRole('link', { name: /gpt4all chat/i });
       const swrLink = screen.getByRole('link', { name: /swr todos/i });
-      const reactQueryLink = screen.getByRole('link', { name: /react query todos/i });
+      const reactQueryLink = screen.getByRole('link', {
+        name: /react query todos/i,
+      });
 
       expect(openaiLink).toHaveAttribute('href', '/openai');
       expect(gpt4allLink).toHaveAttribute('href', '/gpt4all');

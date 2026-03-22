@@ -1,52 +1,58 @@
-import { http, HttpResponse } from 'msw';
+import { rest } from 'msw';
 
 // Mock handlers for API endpoints
 export const handlers = [
-  // Mock handler for chat API
-  http.post('/api/chat', async ({ request }) => {
-    const body = await request.json();
-
-    return HttpResponse.json({
-      message: {
-        role: 'assistant',
-        content: 'This is a mocked response from the AI assistant.',
-      },
-    });
+  // Mock handler for chat API (OpenAI)
+  rest.post('/api/chat', async (req, res, ctx) => {
+    return res(
+      ctx.json({
+        message: {
+          role: 'assistant',
+          content: 'This is a mocked response from the AI assistant.',
+        },
+      }),
+    );
   }),
 
   // Mock handler for GPT4All
-  http.post('/api/chat4all', async ({ request }) => {
-    const body = await request.json();
-
-    return HttpResponse.json({
-      message: {
-        role: 'assistant',
-        content: 'This is a mocked response from GPT4All.',
-      },
-    });
+  rest.post('/api/chat4all', async (req, res, ctx) => {
+    return res(
+      ctx.json({
+        message: {
+          role: 'assistant',
+          content: 'This is a mocked response from GPT4All.',
+        },
+      }),
+    );
   }),
 ];
 
-// Error handlers for testing error scenarios
-export const errorHandlers = [
-  // Server error
-  http.post('/api/chat', () => {
-    return HttpResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 },
+// Reusable handler factories for testing different scenarios
+export const createSuccessHandler = (url: string, content: string) => {
+  return rest.post(url, async (req, res, ctx) => {
+    return res(
+      ctx.json({
+        message: {
+          role: 'assistant',
+          content,
+        },
+      }),
     );
-  }),
+  });
+};
 
-  // Validation error
-  http.post('/api/chat', () => {
-    return HttpResponse.json(
-      { error: 'Messages are required' },
-      { status: 400 },
-    );
-  }),
+export const createErrorHandler = (
+  url: string,
+  status: number,
+  error: string,
+) => {
+  return rest.post(url, async (req, res, ctx) => {
+    return res(ctx.status(status), ctx.json({ error }));
+  });
+};
 
-  // Network error simulation
-  http.post('/api/chat', () => {
-    return HttpResponse.error();
-  }),
-];
+export const createNetworkErrorHandler = (url: string) => {
+  return rest.post(url, async (req, res, ctx) => {
+    return res.networkError('Network error');
+  });
+};
