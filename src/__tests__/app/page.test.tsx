@@ -14,18 +14,24 @@ describe('Home Page', () => {
     it('should render the home page', () => {
       render(<Home />);
 
-      expect(screen.getByText('openai')).toBeInTheDocument();
-      expect(screen.getByText('gpt4all')).toBeInTheDocument();
+      expect(screen.getByText('OpenAI Chat')).toBeInTheDocument();
+      expect(screen.getByText('GPT4All Chat')).toBeInTheDocument();
+      expect(screen.getByText('SWR Todos')).toBeInTheDocument();
+      expect(screen.getByText('React Query Todos')).toBeInTheDocument();
     });
 
     it('should render navigation links with correct hrefs', () => {
       render(<Home />);
 
-      const openaiLink = screen.getByRole('link', { name: /openai/i });
-      const gpt4allLink = screen.getByRole('link', { name: /gpt4all/i });
+      const openaiLink = screen.getByRole('link', { name: /openai chat/i });
+      const gpt4allLink = screen.getByRole('link', { name: /gpt4all chat/i });
+      const swrLink = screen.getByRole('link', { name: /swr todos/i });
+      const reactQueryLink = screen.getByRole('link', { name: /react query todos/i });
 
       expect(openaiLink).toHaveAttribute('href', '/openai');
       expect(gpt4allLink).toHaveAttribute('href', '/gpt4all');
+      expect(swrLink).toHaveAttribute('href', '/todos-swr');
+      expect(reactQueryLink).toHaveAttribute('href', '/todos-react-query');
     });
 
     it('should match snapshot', () => {
@@ -96,7 +102,7 @@ describe('Home Page', () => {
       const user = userEvent.setup();
       render(<Home />);
 
-      const openaiLink = screen.getByRole('link', { name: /openai/i });
+      const openaiLink = screen.getByRole('link', { name: /openai chat/i });
 
       // Verify link is clickable
       await user.click(openaiLink);
@@ -111,14 +117,21 @@ describe('Home Page', () => {
       const { container } = render(<Home />);
 
       const mainElement = container.querySelector('main');
-      expect(mainElement).toHaveClass('flex', 'flex-col', 'gap-4');
+      expect(mainElement).toHaveClass('max-w-5xl', 'mx-auto');
     });
 
     it('should have responsive layout classes', () => {
       const { container } = render(<Home />);
 
       const mainElement = container.querySelector('main');
-      expect(mainElement?.className).toContain('sm:items-start');
+      expect(mainElement?.className).toContain('max-w-5xl');
+    });
+
+    it('should have card grid layout', () => {
+      const { container } = render(<Home />);
+
+      const gridElements = container.querySelectorAll('.grid');
+      expect(gridElements.length).toBeGreaterThan(0);
     });
   });
 });

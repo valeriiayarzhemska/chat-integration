@@ -3,21 +3,86 @@
 exports[`Home Page Rendering should match snapshot 1`] = `
 <div>
   <div
-    class="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black"
+    class="min-h-screen bg-black-900 py-12 px-4"
   >
     <main
-      class="flex flex-col gap-4 min-h-screen w-full max-w-3xl flex-col items-center py-32 px-16 bg-white dark:bg-black sm:items-start"
+      class="max-w-5xl mx-auto"
     >
-      <a
-        href="/openai"
+      <div
+        class="text-center mb-12"
       >
-        openai
-      </a>
-      <a
-        href="/gpt4all"
+        <p
+          class="text-xl text-black-300"
+        >
+          PDP - March 2026
+        </p>
+      </div>
+      <div
+        class="grid md:grid-cols-2 gap-6 mb-8"
       >
-        gpt4all
-      </a>
+        <a
+          class="group block p-8 bg-gray-900 rounded-xl shadow-md hover:shadow-xl transition-all border-2 border-transparent hover:border-blue-500"
+          href="/todos-swr"
+        >
+          <div
+            class="flex items-center justify-between mb-4"
+          >
+            <h2
+              class="text-2xl font-bold text-black-900 group-hover:text-blue-600 transition-colors"
+            >
+              SWR Todos
+            </h2>
+          </div>
+        </a>
+        <a
+          class="group block p-8 bg-gray-900 rounded-xl shadow-md hover:shadow-xl transition-all border-2 border-transparent hover:border-green-500"
+          href="/todos-react-query"
+        >
+          <div
+            class="flex items-center justify-between mb-4"
+          >
+            <h2
+              class="text-2xl font-bold text-black-900 group-hover:text-green-600 transition-colors"
+            >
+              React Query Todos
+            </h2>
+          </div>
+        </a>
+      </div>
+      <div
+        class="grid md:grid-cols-2 gap-6 mb-8"
+      >
+        <a
+          class="group block p-8 bg-gray-900 rounded-xl shadow-md hover:shadow-xl transition-all border-2 border-transparent hover:border-purple-500"
+          href="/openai"
+        >
+          <h2
+            class="text-2xl font-bold text-black-900 group-hover:text-purple-600 transition-colors mb-4"
+          >
+            OpenAI Chat
+          </h2>
+          <p
+            class="text-black-600 mb-4"
+          >
+            Integration with OpenAI's GPT models
+          </p>
+        </a>
+        <a
+          class="group block p-8 bg-gray-900 rounded-xl shadow-md hover:shadow-xl transition-all border-2 border-transparent hover:border-indigo-500"
+          href="/gpt4all"
+        >
+          <h2
+            class="text-2xl font-bold text-black-900 group-hover:text-indigo-600 transition-colors mb-4"
+          >
+            GPT4All Chat
+          </h2>
+          <p
+            class="text-black-600 mb-4"
+          >
+            Local LLM integration with GPT4All
+          </p>
+        </a>
+      </div>
     </main>
   </div>
 </div>
