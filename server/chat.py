@@ -7,9 +7,22 @@ model_path = os.path.join(script_dir, "models", "qwen2-1_5b-instruct-q4_0.gguf")
 
 model = GPT4All(model_path)
 
-prompt = json.loads(sys.stdin.read())["prompt"]
+input_data = json.loads(sys.stdin.read())
+messages = input_data["messages"]
 
-response = model.generate(prompt)
+conversation = ""
+for msg in messages:
+    role = msg["role"]
+    content = msg["content"]
+    if role == "user":
+        conversation += f"User: {content}\n"
+    elif role == "assistant":
+        conversation += f"Assistant: {content}\n"
+
+# Add prompt for the assistant to respond
+conversation += "Assistant:"
+
+response = model.generate(conversation, max_tokens=500)
 
 print(json.dumps({"role": "assistant", "content": response}))
 sys.stdout.flush()

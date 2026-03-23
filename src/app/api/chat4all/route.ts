@@ -12,7 +12,7 @@ export async function POST(req: Request) {
       });
     }
 
-    const lastMessage = data.messages[data.messages.length - 1].content;
+    const allMessages = data.messages;
 
     const python = spawn('./.venv/bin/python3', ['./server/chat.py']);
 
@@ -27,7 +27,7 @@ export async function POST(req: Request) {
       errorOutput += chunk.toString();
     });
 
-    python.stdin.write(JSON.stringify({ prompt: lastMessage }));
+    python.stdin.write(JSON.stringify({ messages: allMessages }));
     python.stdin.end();
 
     await new Promise((resolve, reject) => {
